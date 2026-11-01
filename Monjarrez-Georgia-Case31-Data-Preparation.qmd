@@ -18,7 +18,7 @@ execute:
 
 ## Purpose and main decisions
 
-This report prepares the Case 31 member survey for analysis. The case concerns members' borrowing, awareness of credit union services, employee proficiency, and perceptions of operations. I retain the questionnaire items, repair their metadata, handle nonresponses as missing, and create only the employee proficiency index. The operational items remain separate because their shared measurement evidence is weak.
+I cleaned the Case 31 survey data and evaluated two proposed measures. The results support an employee proficiency index; the operational effectiveness items remain separate.
 
 ```{r}
 #| label: setup
@@ -34,19 +34,16 @@ raw_snapshot <- data_raw
 
 ## Import and inspection
 
-The import contains **128 rows and 34 columns**: 32 questionnaire variables and two precomputed variables. The questionnaire items are q3-q27, q30-q34, q37, and q38. The two precomputed variables are `OverallEmployeePerformace` and `employeeperformance`. I exclude both from the analysis copy because their construction and validation are undocumented. The absent question numbers are not recreated or invented.
+The SPSS file contains **128 rows and 34 columns**: 32 questionnaire items (q3-q27, q30-q34, q37, and q38) and two precomputed variables, `OverallEmployeePerformace` and `employeeperformance`. I excluded both summaries because their calculation is undocumented.
 
-A variable label describes a whole column, such as savings rates for q7. A value label explains a specific numeric response, such as 1 = Very high. Both are metadata; neither changes a respondent's answer.
+A variable label describes a column, such as savings rates for q7. A value label identifies a response code, such as 1 = Very high.
 
 ```{r}
 #| label: inspect
-as.data.frame(dim(data_raw)) |> setNames("Dimension (rows, columns)") |> tab()
-tibble(variable = names(data_raw),
-       class = map_chr(data_raw, ~class(.x)[1]),
-       missing = map_int(data_raw, ~sum(is.na(.x)))) |> tab()
+tibble(rows = nrow(data_raw), columns = ncol(data_raw)) |> tab()
 ```
 
-Only q7, q8, and q37 have missing values immediately after import: **10 (7.8%), 21 (16.4%), and 7 (5.5%)**, respectively. The raw file marks code 6 as an SPSS missing value for these items, so `read_sav()` already converts those responses to NA. No values are imputed.
+At import, q7 has **10 missing responses (7.8%)**, q8 has **21 (16.4%)**, and q37 has **7 (5.5%)**. Their SPSS missing code 6 becomes NA through `read_sav()`. I did not impute values.
 
 ```{r}
 #| label: raw-missing
@@ -59,7 +56,7 @@ tab(raw_missing, 1)
 
 ## Data dictionary and measurement levels
 
-The original labels are mostly informative: employee courtesy, helpfulness, professionalism, availability, savings rates, and the named services identify their content. However, q8 incorrectly repeats the statement frequency label from q9; q38's “headquarter” label is vague; capitalization varies; and the precomputed variables lack labels. I replace questionnaire labels with consistent descriptions. The full original dictionary below preserves the evidence for those changes.
+Most labels identify the item clearly. However, q8 repeats q9's statement-frequency label, q38's “headquarter” label needs clarification, and the precomputed variables lack labels. I standardized the questionnaire labels.
 
 ```{r}
 #| label: dictionary-function
@@ -99,13 +96,13 @@ dictionary(data_raw) |> select(variable, codes) |> tab()
 | q9 | Ordered frequency categories, but desirability peaks at “About right,” not at an endpoint. |
 | q3-q8, q10, q30-q34, q37 | Ordinal ratings. Agreement items and their justified mean index are treated as approximately interval for the requested alpha, factor analysis, and averaging. Equal intervals remain an assumption. |
 
-For example, q38 identifies headquarters residence without a numerical ranking, so it is nominal. q7 orders perceived savings rates from very high to very low, so it is ordinal. q3 is an ordered agreement item; treating it numerically for scale construction is an approximation rather than proof of interval measurement. There are no true ratio measurements in this imported subset: coded 1 does not represent an absolute zero or support meaningful ratios.
+q38 is nominal because residence has no numerical ranking. q7 is ordinal because perceived rates are ordered. q3 is an ordinal agreement item, treated as approximately interval for scale analysis. None of these coded responses is a ratio measurement.
 
-The essential value labels are the direction of the rating scales, yes/no coding, awareness/use categories, and special missing codes. Agreement endpoints are predictable after the scale is stated, but all five labels still improve documentation. The raw agreement items label only 1 and 5; codes 2, 3, and 4 are unlabeled. Awareness items omit the label for 3 = Unaware, and yes/no items omit 3 = No answer. I add all of these, including valid categories not observed in this sample.
+Scale directions, awareness/use categories, and missing codes are essential for interpretation. The agreement endpoints are familiar, but I added the unlabeled middle responses (2-4), 3 = Unaware for q13-q26, and 3 = No answer for yes/no items.
 
 ## Repair labels and check allowed values
 
-I retain the original data unchanged and work on a questionnaire-only copy. q8 is relabeled **Borrowing interest rates** using its actual questionnaire wording. For q37, the questionnaire says “No opinion,” while Exhibit 31.2 and the assignment procedure describe code 6 as “No answer.” Both identify a nonrating, so I document code 6 as “No opinion / no answer” and treat it as missing. I do not reverse labels alone: numeric responses and labels must change together in the new reversed variables.
+I kept the raw data unchanged and relabeled q8 **Borrowing interest rates**. For q37, the questionnaire calls code 6 “No opinion,” while Exhibit 31.2 calls it “No answer.” Both represent a nonrating and are treated as missing.
 
 ```{r}
 #| label: repair-labels
@@ -152,11 +149,11 @@ tab(quality,1)
 stopifnot(all(quality$undefined == 0))
 ```
 
-All observed nonmissing values fall within the defined coding ranges. This does not prove the responses are accurate, but no out-of-range response needs correction. The q12 code 3 is a nonresponse and needs removal from substantive yes/no analyses. Unaware = 3 in q13-q26 is valid information and must remain.
+All observed values fall within the defined coding ranges. Code 3 in q12 is a nonresponse; code 3 in q13-q26 means Unaware and remains valid.
 
 ## Missing responses and reverse coding
 
-I explicitly convert code 6 to NA for q7, q8, and q37, and code 3 to NA for the yes/no questions. Although code 6 is already missing at import, the explicit rule protects reproducibility. After these changes, q12 has 22 missing responses in addition to the original missing values in q7, q8, and q37. I remove nonresponse value labels after recoding so the cleaned metadata describe only valid responses.
+I explicitly recoded 6 to NA for q7, q8, and q37, and 3 to NA for yes/no items. This adds **22 missing responses in q12**. I also removed the nonresponse value labels.
 
 ```{r}
 #| label: clean-missing
@@ -167,7 +164,7 @@ map_dfr(c("q7","q8","q37","q11","q12","q27","q38"),
         ~tibble(variable=.x, missing=sum(is.na(data[[.x]])))) |> tab()
 ```
 
-For q7, q8, and q37 I use `6 - original`; for q10 I use `5 - original`. Each original variable stays available. q7r means higher savings rates, q10r better statement accuracy, and q37r better overall management. **q8r means higher borrowing rates, not a more favorable borrowing assessment.** Higher borrowing rates would ordinarily be less attractive to borrowers. I follow the requested numeric reversal and label its meaning precisely; I do not combine it with favorable-attitude items.
+I used `6 - original` for q7, q8, and q37, and `5 - original` for q10, keeping the originals. Higher reversed values mean higher savings rates, better statement accuracy, or better overall management. **Higher q8r means higher borrowing rates, which is not necessarily more favorable.**
 
 ```{r}
 #| label: reverse-ratings
@@ -187,13 +184,13 @@ data$q9_about_right <- labelled(ifelse(is.na(data$q9),NA_real_,
                                 label="Account statement frequency is about right")
 ```
 
-I do not reverse q9 because a reversal would move one extreme to the other without identifying the desired middle response. Instead, `q9_about_right` is 1 for original code 3 and 0 for another valid response, preserving NA. Yes/no variables also remain categorical.
+q9 is not reversed because “About right” is the middle response. Instead, `q9_about_right` equals 1 for code 3 and 0 for another valid response, preserving NA. Yes/no items remain categorical.
 
 ### Awareness items: categorical interpretation and ordinal exercise
 
-Awareness/use is not a satisfaction scale. Using a service also reflects need and eligibility, so I would not average the 14 products into one attitude index. For analysis I recommend each service's three-category distribution, percentage aware (codes 1 or 2), and percentage used (code 1), with valid-response denominators.
+Awareness and use depend on members' needs, so I would summarize each service separately using category frequencies and percentages aware or used, rather than average the 14 items into an attitude index.
 
-For the assignment's hypothetical ordinal interpretation, I create q13r-q26r using `4 - original`: 1 = Unaware, 2 = Aware but have not used, 3 = Aware and have used. This assumes an ordered progression of engagement. It does not establish equally spaced categories or justify a cross-product mean. These derived variables are retained separately and labeled to make that assumption explicit.
+For the ordinal exercise, I created q13r-q26r using `4 - original`: 1 = Unaware, 2 = Aware but have not used, and 3 = Aware and have used. This assumes increasing engagement, not equal spacing, and does not justify averaging across products.
 
 ```{r}
 #| label: awareness-ordinal
@@ -214,7 +211,7 @@ tab(awareness_summary,1)
 
 ### Verify every transformation
 
-The table shows observed original/reversed pairs, including missing pairs. Code 6 never becomes a rating. Every derived reversal has the same missing pattern as its cleaned source, and every complete pair sums to 6, 5, or 4 as appropriate.
+Cross-tabulations confirm the reversed values and missing pairs. Assertions check that missing patterns stay unchanged and complete pairs sum to the required constant.
 
 ```{r}
 #| label: verify-recodes
@@ -231,7 +228,7 @@ stopifnot(identical(data_raw,raw_snapshot))
 
 ## Evaluate candidate multi-item measures
 
-The following analysis uses plain numeric copies of the item sets. Alpha is calculated without automatic item reversal (`check.keys = FALSE`), and the one-factor model uses minimum residual extraction and no rotation. All 128 respondents have complete answers to both candidate item sets, so missing-data rules do not change these results.
+I calculated alpha without automatic reversal and fitted one factor using minimum residual extraction. Both item sets have complete responses from all 128 respondents.
 
 ```{r}
 #| label: measurement-checks
@@ -256,19 +253,19 @@ bind_rows(item_evidence(employee_alpha,employee_fa),
 
 ### Employee proficiency: create the index
 
-Raw alpha is **0.866**. Corrected item-total correlations are 0.657 (q3), 0.823 (q4), 0.733 (q5), and 0.673 (q6). None is weak or negative. One-factor loadings are approximately 0.72, 0.92, 0.79, and 0.73, with about 63% of variance explained. Courtesy, helpfulness, professionalism, and availability describe related aspects of employee service, and all are worded positively on the same agreement scale. No reversal is needed.
+**Employee alpha = 0.866**, with corrected item-total correlations of .657-.823 and loadings of .72-.92. The factor explains 63% of variance. Courtesy, helpfulness, professionalism, and availability describe related employee-service qualities on the same positive agreement scale, supporting a mean index.
 
-I create their mean as a provisional employee proficiency index. The factor evidence is supportive but not perfect: the one-factor chi-square is significant (approximately 12.72, df = 2, p = .0017), TLI is about .874, and RMSEA is high (about .204). With only two model degrees of freedom, fit statistics need caution; the index is a useful initial summary, not proof of unidimensionality or full construct validity. Future work should examine the structure and the restricted, generally favorable item distributions.
+The index is provisional: one-factor fit is imperfect (chi-square = 12.72, df = 2, p = .0017; TLI = .874; RMSEA = .204). Strong item relationships support its use, but further factor analysis is needed before claiming a single validated construct.
 
 ### Operational effectiveness: retain separate items
 
-Raw alpha is **0.539**. Corrected item-total correlations range from 0.216 to 0.483: q30 = .324, q31 = .287, q32 = .483, q33 = .222, and q34 = .216. All are positive, so the weak relations are not evidence of a reverse-worded item. The questionnaire confirms that all five statements have a favorable agreement direction.
+**Operational alpha = 0.539**, with corrected item-total correlations of .216-.483. All are positive, and the questionnaire contains no reverse-worded item in this set.
 
-The loadings are about .40, .38, .79, .29, and .35. The factor explains only about 23% of variance, with q32 dominating and the other communalities low. Loan pricing, confidentiality, processing speed, meeting needs, and form simplicity also describe distinct operational attributes. I do **not** create an operational effectiveness index or reverse items merely to increase alpha. I would analyze these items individually with response frequencies, medians, and relevant comparisons by headquarters residence or loan status.
+Loadings range from .29 to .79, and the factor explains only 23% of variance. Pricing, confidentiality, processing speed, meeting needs, and form simplicity cover different attributes. I kept them separate and would compare their frequencies, medians, and responses by residence or loan status.
 
 ## Create and inspect the supported index
 
-I use a respondent's mean across q3-q6, with at least three of the four valid answers required. This limits dependence on a single item if future data contain nonresponse. There are no missing employee answers here, so all 128 means use all four items. The index stays on the 1-5 agreement scale, and higher means a more positive employee assessment.
+The employee index is the mean of q3-q6, requiring at least three valid answers. All 128 respondents answered all four. Scores remain on the 1-5 scale, with higher scores indicating better employee assessments.
 
 ```{r}
 #| label: employee-index
@@ -285,11 +282,9 @@ stopifnot(!("operational_effectiveness_index" %in% names(data)),
 
 ## Data preparation narrative and limitations
 
-I imported the instructor's SPSS data with `haven::read_sav()` and preserved the raw object. A dictionary exposed incomplete response labels, the duplicated q8 label, and two undocumented summary columns. I kept the 32 available questionnaire items, repaired variable and value labels, and removed both precomputed summaries. Range checks found no undefined numeric responses. I retained substantive “Unaware” responses while recoding nonrating and yes/no nonresponses to NA; I did not impute them.
+I kept the 32 questionnaire items, repaired labels, recoded nonresponses, and verified the reversals. Reliability, factor loadings, and item wording support only the employee proficiency index.
 
-I added correctly labeled reversals for q7, q8, q10, and q37, a statement-frequency indicator, and the separate ordinal awareness exercise. Cross-tabulations and assertions verify every reversal and missing-value pattern. Higher q8r explicitly means higher borrowing rates, which must not be mistaken for a more favorable response. Alpha, item-total correlations, factor loadings, and item meaning jointly support the employee index, while the operational items remain separate.
-
-The missing borrowing-rate responses (16.4%) could be related to members' borrowing experience, so complete-case comparisons may be selective. Ordinal rating analysis assumes approximate equal spacing. The case narrative describes 125 returned questionnaires with two excluded (123 usable), whereas this supplied file contains 128 records. Without respondent identifiers or provenance notes I cannot reconcile that difference, detect duplicate people, or justify deleting five rows. I retain all supplied records and flag the discrepancy. The imported subset also lacks q1, q2, q28, q29, q35, q36, q39, and q40, limiting answers to several original research objectives. This assignment prepares the available data; it does not establish causal conclusions or representativeness of all members.
+Missing borrowing-rate responses (16.4%) may affect comparisons. The case narrative describes 123 usable questionnaires, but this file contains 128 records. I retained all supplied records because there is no information identifying exclusions. Missing questions and the absence of respondent identifiers limit further checks and analysis of the case's broader objectives.
 
 ## Final dictionary and saved data
 
@@ -324,10 +319,3 @@ tibble(records=nrow(data),variables=ncol(data),
 
 - [GitHub Pages report](https://gmonjarrez.github.io/case31-data-preparation/Monjarrez-Georgia-Case31-Data-Preparation.html)
 - [GitHub repository](https://github.com/gmonjarrez/case31-data-preparation)
-- [QMD source](Monjarrez-Georgia-Case31-Data-Preparation.qmd)
-- The cleaned SPSS file is generated locally when this QMD is rendered.
-- [Cleaned data dictionary](Case31_GM_data_dictionary.csv)
-- [Instructor's procedure](https://jaejungca.github.io/case31/IC-M08-Data-Preparation-Case-31-R.html)
-- [Case narrative, questionnaire, and coding exhibit](https://github.com/jaejungca/case31/blob/main/Case%2031%20-%20Employees%20Federal%20Credit%20Union.PDF)
-
-To reproduce: install `haven`, `labelled`, `dplyr`, `tidyr`, `purrr`, `psych`, `knitr`, and `rmarkdown` in R once; place the raw SAV beside the QMD; then render the QMD with Quarto. The output is a self-contained HTML report.
