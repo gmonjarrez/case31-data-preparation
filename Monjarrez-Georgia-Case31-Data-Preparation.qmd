@@ -256,7 +256,7 @@ bind_rows(item_evidence(employee_alpha,employee_fa),
 
 ### Employee proficiency: create the index
 
-Raw alpha is **0.866**. Corrected item-total correlations are 0.657 (q3), 0.823 (q4), 0.733 (q5), and 0.673 (q6). None is weak or negative. One-factor loadings are approximately 0.724, 0.921, 0.791, and 0.730, with about 63% of variance explained. Courtesy, helpfulness, professionalism, and availability describe related aspects of employee service, and all are worded positively on the same agreement scale. No reversal is needed.
+Raw alpha is **0.866**. Corrected item-total correlations are 0.657 (q3), 0.823 (q4), 0.733 (q5), and 0.673 (q6). None is weak or negative. One-factor loadings are approximately 0.72, 0.92, 0.79, and 0.73, with about 63% of variance explained. Courtesy, helpfulness, professionalism, and availability describe related aspects of employee service, and all are worded positively on the same agreement scale. No reversal is needed.
 
 I create their mean as a provisional employee proficiency index. The factor evidence is supportive but not perfect: the one-factor chi-square is significant (approximately 12.72, df = 2, p = .0017), TLI is about .874, and RMSEA is high (about .204). With only two model degrees of freedom, fit statistics need caution; the index is a useful initial summary, not proof of unidimensionality or full construct validity. Future work should examine the structure and the restricted, generally favorable item distributions.
 
@@ -264,7 +264,7 @@ I create their mean as a provisional employee proficiency index. The factor evid
 
 Raw alpha is **0.539**. Corrected item-total correlations range from 0.216 to 0.483: q30 = .324, q31 = .287, q32 = .483, q33 = .222, and q34 = .216. All are positive, so the weak relations are not evidence of a reverse-worded item. The questionnaire confirms that all five statements have a favorable agreement direction.
 
-The loadings are about .401, .379, .786, .295, and .355. The factor explains only about 23% of variance, with q32 dominating and the other communalities low. Loan pricing, confidentiality, processing speed, meeting needs, and form simplicity also describe distinct operational attributes. I do **not** create an operational effectiveness index or reverse items merely to increase alpha. I would analyze these items individually with response frequencies, medians, and relevant comparisons by headquarters residence or loan status.
+The loadings are about .40, .38, .79, .29, and .35. The factor explains only about 23% of variance, with q32 dominating and the other communalities low. Loan pricing, confidentiality, processing speed, meeting needs, and form simplicity also describe distinct operational attributes. I do **not** create an operational effectiveness index or reverse items merely to increase alpha. I would analyze these items individually with response frequencies, medians, and relevant comparisons by headquarters residence or loan status.
 
 ## Create and inspect the supported index
 
